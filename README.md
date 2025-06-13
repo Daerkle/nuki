@@ -55,6 +55,5 @@ OAKMIND HIVE V 1.0 ist eine hochmoderne, selbst-hostbare KI-Plattform, die spezi
 | Datensouveränität | ✅ Vollständig | ❌ Cloud-basiert | ❌ Cloud-basiert |
 | DSGVO-Konformität | ✅ Garantiert | ⚠️ Eingeschränkt | ⚠️ Eingeschränkt |
 | Multi-Model Support | ✅ Unbegrenzt | ❌ Nur OpenAI | ❌ Nur Anthropic |
-| Einmalkosten | ✅ 4.950 EUR | ❌ 60 USD/User/Monat | ❌ Custom Pricing |
 | On-Premise | ✅ Standard | ❌ Nicht verfügbar | ❌ Nicht verfügbar |
 | Anpassbarkeit | ✅ Vollständig | ⚠️ Begrenzt | ⚠️ Begrenzt |
