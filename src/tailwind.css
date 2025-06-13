@@ -1,0 +1,59 @@
+@import 'tailwindcss';
+
+@config '../tailwind.config.js';
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-gray-200, #e3e3e3);
+	}
+}
+
+@layer base {
+	html,
+	pre {
+		font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Vazirmatn', ui-sans-serif, system-ui,
+			'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif, 'Helvetica Neue', Arial,
+			'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+	}
+
+	pre {
+		white-space: pre-wrap;
+	}
+
+	button {
+		@apply cursor-pointer;
+	}
+
+	input::placeholder,
+	textarea::placeholder {
+		color: #b4b4b4;
+	}
+	
+	.dark input::placeholder,
+	.dark textarea::placeholder {
+		color: #676767;
+	}
+	
+	/* Basis Hintergrundfarben */
+	body {
+		background-color: var(--color-gray-50, #f9f9f9);
+	}
+	
+	.dark body {
+		background-color: var(--color-gray-900, #1A1A1A);
+	}
+}
+
+@custom-variant hover (&:hover);

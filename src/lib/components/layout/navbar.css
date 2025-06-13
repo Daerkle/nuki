@@ -1,0 +1,42 @@
+/* Navbar-spezifische Styles für kompakteres Design */
+
+/* Entfernt alle Backdrop-Blur-Effekte von der Navbar */
+nav {
+  backdrop-filter: none !important;
+}
+
+/* Flexiblere Navbar-Höhe für Model Selector */
+nav > div {
+  min-height: auto;
+  max-height: none;
+}
+
+/* Kleinere Buttons in der Navbar */
+nav button {
+  padding: 0.375rem;
+}
+
+/* Kleinere Icons */
+nav svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Model Selector mit ausreichend Platz */
+nav .model-selector {
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Sicherstellen, dass keine Überlappungen auftreten */
+.sticky.top-0 {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+/* Klare Trennung zwischen Navbar und Content */
+nav + * {
+  position: relative;
+  z-index: 10;
+}
