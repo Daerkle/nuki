@@ -3,6 +3,7 @@ import logging
 import ftfy
 import sys
 import json
+import os
 
 from langchain_community.document_loaders import (
     AzureAIDocumentIntelligenceLoader,
@@ -255,7 +256,12 @@ class Loader:
                 )
         elif (
             self.engine == "datalab_marker"
-            and self.kwargs.get("DATALAB_MARKER_API_KEY")
+            and (
+                self.kwargs.get("DATALAB_MARKER_API_KEY") or  
+                self.kwargs.get("MARKER_SERVER_URL") or       
+                os.getenv("MARKER_SERVER_URL") or             
+                True  
+            )
             and file_ext
             in [
                 "pdf",
@@ -280,7 +286,7 @@ class Loader:
         ):
             loader = DatalabMarkerLoader(
                 file_path=file_path,
-                api_key=self.kwargs["DATALAB_MARKER_API_KEY"],
+                api_key=self.kwargs.get("DATALAB_MARKER_API_KEY", "dummy"),  
                 langs=self.kwargs.get("DATALAB_MARKER_LANGS"),
                 use_llm=self.kwargs.get("DATALAB_MARKER_USE_LLM", False),
                 skip_cache=self.kwargs.get("DATALAB_MARKER_SKIP_CACHE", False),

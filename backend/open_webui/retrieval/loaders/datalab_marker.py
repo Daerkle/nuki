@@ -10,11 +10,17 @@ from fastapi import HTTPException, status
 log = logging.getLogger(__name__)
 
 
-class DatalabMarkerLoader:
+class LocalMarkerLoader:
+    """
+    Local Marker Loader - Native integration for Hive/OpenWebUI
+    Replaces the Datalab cloud API with local Marker service
+    """
+    
     def __init__(
         self,
         file_path: str,
-        api_key: str,
+        # Compatibility parameters (matching Datalab interface)
+        api_key: str = None,  # Ignored but kept for compatibility
         langs: Optional[str] = None,
         use_llm: bool = False,
         skip_cache: bool = False,
@@ -22,10 +28,28 @@ class DatalabMarkerLoader:
         paginate: bool = False,
         strip_existing_ocr: bool = False,
         disable_image_extraction: bool = False,
-        output_format: str = None,
+        output_format: str = "markdown",
+        # Local Marker specific parameters
+        marker_url: str = None,
+        timeout: int = None,
     ):
         self.file_path = file_path
-        self.api_key = api_key
+        
+        # Get marker URL from parameter or environment
+        self.marker_url = (
+            marker_url or 
+            os.getenv("MARKER_SERVER_URL") or 
+            os.getenv("MARKER_URL") or 
+            "http://marker:8501"
+        ).rstrip('/')
+        
+        # Get timeout from parameter or environment
+        self.timeout = (
+            timeout or 
+            int(os.getenv("MARKER_TIMEOUT", "300"))
+        )
+        
+        # Store parameters (keeping Datalab compatibility)
         self.langs = langs
         self.use_llm = use_llm
         self.skip_cache = skip_cache
@@ -33,9 +57,16 @@ class DatalabMarkerLoader:
         self.paginate = paginate
         self.strip_existing_ocr = strip_existing_ocr
         self.disable_image_extraction = disable_image_extraction
-        self.output_format = output_format
+        self.output_format = output_format or "markdown"
+        
+        # api_key is ignored for local implementation but kept for compatibility
+        if api_key:
+            log.info("API key provided but ignored for local Marker implementation")
+        
+        log.info(f"LocalMarkerLoader initialized: marker_url={self.marker_url}, timeout={self.timeout}s, output_format={self.output_format}")
 
     def _get_mime_type(self, filename: str) -> str:
+        """Get MIME type from filename extension"""
         ext = filename.rsplit(".", 1)[-1].lower()
         mime_map = {
             "pdf": "application/pdf",
@@ -59,193 +90,170 @@ class DatalabMarkerLoader:
         }
         return mime_map.get(ext, "application/octet-stream")
 
-    def check_marker_request_status(self, request_id: str) -> dict:
-        url = f"https://www.datalab.to/api/v1/marker/{request_id}"
-        headers = {"X-Api-Key": self.api_key}
+    def _check_marker_health(self) -> bool:
+        """Check if local Marker service is available"""
         try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            result = response.json()
-            log.info(f"Marker API status check for request {request_id}: {result}")
-            return result
-        except requests.HTTPError as e:
-            log.error(f"Error checking Marker request status: {e}")
+            response = requests.get(f"{self.marker_url}/health", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("converter_ready", False)
+            return False
+        except Exception as e:
+            log.error(f"Marker health check failed: {e}")
+            return False
+
+    def check_marker_request_status(self, request_id: str) -> dict:
+        """
+        Compatibility method for the old interface
+        For local implementation, this is not needed but kept for compatibility
+        """
+        log.warning("check_marker_request_status called on LocalMarkerLoader - this method is not applicable for local processing")
+        return {"status": "complete", "success": True, "message": "Local processing does not use request IDs"}
+
+    def _convert_with_local_marker(self) -> dict:
+        """Convert file using local Marker service"""
+        if not self._check_marker_health():
             raise HTTPException(
-                status.HTTP_502_BAD_GATEWAY,
-                detail=f"Failed to check Marker request: {e}",
-            )
-        except ValueError as e:
-            log.error(f"Invalid JSON checking Marker request: {e}")
-            raise HTTPException(
-                status.HTTP_502_BAD_GATEWAY, detail=f"Invalid JSON: {e}"
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Local Marker service is not available or not ready"
             )
 
-    def load(self) -> List[Document]:
-        url = "https://www.datalab.to/api/v1/marker"
         filename = os.path.basename(self.file_path)
         mime_type = self._get_mime_type(filename)
-        headers = {"X-Api-Key": self.api_key}
 
+        # Prepare form data matching the local API
         form_data = {
-            "langs": self.langs,
-            "use_llm": str(self.use_llm).lower(),
-            "skip_cache": str(self.skip_cache).lower(),
-            "force_ocr": str(self.force_ocr).lower(),
-            "paginate": str(self.paginate).lower(),
-            "strip_existing_ocr": str(self.strip_existing_ocr).lower(),
-            "disable_image_extraction": str(self.disable_image_extraction).lower(),
             "output_format": self.output_format,
+            "extract_images": not self.disable_image_extraction,
+            "force_ocr": self.force_ocr,
+            "format_lines": True,  # Always format lines for better quality
         }
 
         log.info(
-            f"Datalab Marker POST request parameters: {{'filename': '{filename}', 'mime_type': '{mime_type}', **{form_data}}}"
+            f"Local Marker request parameters: {{'filename': '{filename}', 'mime_type': '{mime_type}', **{form_data}}}"
         )
 
         try:
             with open(self.file_path, "rb") as f:
                 files = {"file": (filename, f, mime_type)}
                 response = requests.post(
-                    url, data=form_data, files=files, headers=headers
+                    f"{self.marker_url}/convert",
+                    data=form_data,
+                    files=files,
+                    timeout=self.timeout
                 )
                 response.raise_for_status()
                 result = response.json()
+                
+                log.info(f"Local Marker conversion completed: {result.get('message', 'Success')}")
+                return result
+                
         except FileNotFoundError:
             raise HTTPException(
-                status.HTTP_404_NOT_FOUND, detail=f"File not found: {self.file_path}"
+                status.HTTP_404_NOT_FOUND, 
+                detail=f"File not found: {self.file_path}"
+            )
+        except requests.exceptions.Timeout:
+            raise HTTPException(
+                status.HTTP_504_GATEWAY_TIMEOUT,
+                detail=f"Marker conversion timed out after {self.timeout} seconds"
             )
         except requests.HTTPError as e:
+            error_detail = f"Local Marker request failed: {e}"
+            if hasattr(e.response, 'text'):
+                try:
+                    error_data = e.response.json()
+                    error_detail = f"Marker error: {error_data.get('detail', str(e))}"
+                except:
+                    error_detail = f"Marker error: {e.response.text}"
+            
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                detail=f"Datalab Marker request failed: {e}",
-            )
-        except ValueError as e:
-            raise HTTPException(
-                status.HTTP_502_BAD_GATEWAY, detail=f"Invalid JSON response: {e}"
+                detail=error_detail
             )
         except Exception as e:
-            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+            log.error(f"Unexpected error in Marker conversion: {e}")
+            raise HTTPException(
+                status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail=f"Conversion error: {str(e)}"
+            )
 
+    def load(self) -> List[Document]:
+        """
+        Load and convert document using local Marker service
+        Returns: List of Document objects compatible with LangChain
+        """
+        # Convert using local Marker service
+        result = self._convert_with_local_marker()
+        
         if not result.get("success"):
+            error_msg = result.get("error", "Unknown conversion error")
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                detail=f"Datalab Marker request failed: {result.get('error', 'Unknown error')}",
+                detail=f"Local Marker conversion failed: {error_msg}"
             )
 
-        check_url = result.get("request_check_url")
-        request_id = result.get("request_id")
-        if not check_url:
-            raise HTTPException(
-                status.HTTP_502_BAD_GATEWAY, detail="No request_check_url returned."
-            )
-
-        for _ in range(300):  # Up to 10 minutes
-            time.sleep(2)
-            try:
-                poll_response = requests.get(check_url, headers=headers)
-                poll_response.raise_for_status()
-                poll_result = poll_response.json()
-            except (requests.HTTPError, ValueError) as e:
-                raw_body = poll_response.text
-                log.error(f"Polling error: {e}, response body: {raw_body}")
-                raise HTTPException(
-                    status.HTTP_502_BAD_GATEWAY, detail=f"Polling failed: {e}"
-                )
-
-            status_val = poll_result.get("status")
-            success_val = poll_result.get("success")
-
-            if status_val == "complete":
-                summary = {
-                    k: poll_result.get(k)
-                    for k in (
-                        "status",
-                        "output_format",
-                        "success",
-                        "error",
-                        "page_count",
-                        "total_cost",
-                    )
-                }
-                log.info(
-                    f"Marker processing completed successfully: {json.dumps(summary, indent=2)}"
-                )
-                break
-
-            if status_val == "failed" or success_val is False:
-                log.error(
-                    f"Marker poll failed full response: {json.dumps(poll_result, indent=2)}"
-                )
-                error_msg = (
-                    poll_result.get("error")
-                    or "Marker returned failure without error message"
-                )
-                raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST,
-                    detail=f"Marker processing failed: {error_msg}",
-                )
+        # Extract content based on output format
+        if self.output_format.lower() == "markdown":
+            content = result.get("markdown", "")
+        elif self.output_format.lower() == "json":
+            # For JSON output, we'd need to modify the local API to support it
+            content = json.dumps(result, indent=2)
         else:
-            raise HTTPException(
-                status.HTTP_504_GATEWAY_TIMEOUT, detail="Marker processing timed out"
-            )
+            content = str(result.get("markdown", ""))
 
-        if not poll_result.get("success", False):
-            error_msg = poll_result.get("error") or "Unknown processing error"
+        if not content or not content.strip():
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                detail=f"Final processing failed: {error_msg}",
+                detail="Local Marker returned empty content"
             )
 
-        content_key = self.output_format.lower()
-        raw_content = poll_result.get(content_key)
-
-        if content_key == "json":
-            full_text = json.dumps(raw_content, indent=2)
-        elif content_key in {"markdown", "html"}:
-            full_text = str(raw_content).strip()
-        else:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported output format: {self.output_format}",
-            )
-
-        if not full_text:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail="Datalab Marker returned empty content",
-            )
-
+        # Save output to disk (matching Datalab behavior)
+        filename = os.path.basename(self.file_path)
         marker_output_dir = os.path.join("/app/backend/data/uploads", "marker_output")
         os.makedirs(marker_output_dir, exist_ok=True)
 
         file_ext_map = {"markdown": "md", "json": "json", "html": "html"}
-        file_ext = file_ext_map.get(content_key, "txt")
+        file_ext = file_ext_map.get(self.output_format.lower(), "md")
         output_filename = f"{os.path.splitext(filename)[0]}.{file_ext}"
         output_path = os.path.join(marker_output_dir, output_filename)
 
         try:
             with open(output_path, "w", encoding="utf-8") as f:
-                f.write(full_text)
-            log.info(f"Saved Marker output to: {output_path}")
+                f.write(content)
+            log.info(f"Saved Local Marker output to: {output_path}")
         except Exception as e:
             log.warning(f"Failed to write marker output to disk: {e}")
 
+        # Prepare metadata (matching Datalab format)
         metadata = {
             "source": filename,
-            "output_format": poll_result.get("output_format", self.output_format),
-            "page_count": poll_result.get("page_count", 0),
+            "output_format": self.output_format,
+            "page_count": result.get("metadata", {}).get("page_count", 0),
             "processed_with_llm": self.use_llm,
-            "request_id": request_id or "",
+            "request_id": f"local_{int(time.time())}",  # Local request ID
+            "processing_method": "local_marker",
+            "image_count": result.get("images", 0),
         }
 
-        images = poll_result.get("images", {})
-        if images:
-            metadata["image_count"] = len(images)
-            metadata["images"] = json.dumps(list(images.keys()))
+        # Add any additional metadata from the conversion
+        if "metadata" in result and isinstance(result["metadata"], dict):
+            for key, value in result["metadata"].items():
+                if key not in metadata:
+                    metadata[f"marker_{key}"] = value
 
+        # Ensure all metadata values are strings
         for k, v in metadata.items():
             if isinstance(v, (dict, list)):
                 metadata[k] = json.dumps(v)
             elif v is None:
                 metadata[k] = ""
+            else:
+                metadata[k] = str(v)
 
-        return [Document(page_content=full_text, metadata=metadata)]
+        log.info(f"Local Marker processing completed successfully for {filename}")
+        return [Document(page_content=content, metadata=metadata)]
+
+
+# Compatibility alias for easy replacement
+DatalabMarkerLoader = LocalMarkerLoader
