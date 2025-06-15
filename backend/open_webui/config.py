@@ -2052,7 +2052,7 @@ BYPASS_EMBEDDING_AND_RETRIEVAL = PersistentConfig(
 
 
 RAG_TOP_K = PersistentConfig(
-    "RAG_TOP_K", "rag.top_k", int(os.environ.get("RAG_TOP_K", "3"))
+    "RAG_TOP_K", "rag.top_k", int(os.environ.get("RAG_TOP_K", "10"))
 )
 RAG_TOP_K_RERANKER = PersistentConfig(
     "RAG_TOP_K_RERANKER",
@@ -2210,43 +2210,38 @@ TIKTOKEN_ENCODING_NAME = PersistentConfig(
 
 
 CHUNK_SIZE = PersistentConfig(
-    "CHUNK_SIZE", "rag.chunk_size", int(os.environ.get("CHUNK_SIZE", "1000"))
+    "CHUNK_SIZE", "rag.chunk_size", int(os.environ.get("CHUNK_SIZE", "2000"))
 )
 CHUNK_OVERLAP = PersistentConfig(
     "CHUNK_OVERLAP",
     "rag.chunk_overlap",
-    int(os.environ.get("CHUNK_OVERLAP", "100")),
+    int(os.environ.get("CHUNK_OVERLAP", "500")),
 )
 
-DEFAULT_RAG_TEMPLATE = """### Task:
-Respond to the user query using the provided context, incorporating inline citations in the format [id] **only when the <source> tag includes an explicit id attribute** (e.g., <source id="1">).
+DEFAULT_RAG_TEMPLATE = """Generate Response to User Query
+Step 1: Parse Context Information
+Extract and utilize relevant knowledge from the provided context within <context></context> XML tags.
 
-### Guidelines:
-- If you don't know the answer, clearly state that.
-- If uncertain, ask the user for clarification.
-- Respond in the same language as the user's query.
-- If the context is unreadable or of poor quality, inform the user and provide the best possible answer.
-- If the answer isn't present in the context but you possess the knowledge, explain this to the user and provide the answer using your own understanding.
-- **Only include inline citations using [id] (e.g., [1], [2]) when the <source> tag includes an id attribute.**
-- Do not cite if the <source> tag does not contain an id attribute.
-- Do not use XML tags in your response.
-- Ensure citations are concise and directly related to the information provided.
+Step 2: Analyze User Query
+Carefully read and comprehend the user's query, pinpointing the key concepts, entities, and intent behind the question.
 
-### Example of Citation:
-If the user asks about a specific topic and the information is found in a source with a provided id attribute, the response should include the citation like in the following example:
-* "According to the study, the proposed method increases efficiency by 20% [1]."
+Step 3: Determine Response
+If the answer to the user's query can be directly inferred from the context information, provide a concise and accurate response in the same language as the user's query.
 
-### Output:
-Provide a clear and direct response to the user's query, including inline citations in the format [id] only when the <source> tag with id attribute is present in the context.
+Step 4: Handle Uncertainty
+If the answer is not clear, ask the user for clarification to ensure an accurate response.
 
-<context>
-{{CONTEXT}}
-</context>
+Step 5: Avoid Context Attribution
+When formulating your response, do not indicate that the information was derived from the context.
 
-<user_query>
-{{QUERY}}
-</user_query>
-"""
+Step 6: Respond in User's Language
+Maintain consistency by ensuring the response is in the same language as the user's query.
+
+Step 7: Provide Response
+Generate a clear, concise, and informative response to the user's query, adhering to the guidelines outlined above.
+
+User Query: {{QUERY}}
+<context>{{CONTEXT}}</context>"""
 
 RAG_TEMPLATE = PersistentConfig(
     "RAG_TEMPLATE",
