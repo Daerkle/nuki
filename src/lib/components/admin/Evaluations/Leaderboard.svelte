@@ -60,6 +60,11 @@
 	const rankHandler = async (similarities: Map<string, number> = new Map()) => {
 		const modelStats = calculateModelStats(feedbacks, similarities);
 
+		// Debug-Ausgaben
+		console.log('Feedbacks count:', feedbacks.length);
+		console.log('Models count:', $models.length);
+		console.log('Model stats:', modelStats);
+
 		rankedModels = $models
 			.filter((m) => m?.owned_by !== 'arena' && (m?.info?.meta?.hidden ?? false) !== true)
 			.map((model) => {
@@ -80,6 +85,8 @@
 				if (a.rating !== '-' && b.rating !== '-') return b.rating - a.rating;
 				return a.name.localeCompare(b.name);
 			});
+
+		console.log('Ranked models count:', rankedModels.length);
 
 		loadingLeaderboard = false;
 	};
