@@ -27,6 +27,7 @@ from open_webui.retrieval.loaders.external_document import ExternalDocumentLoade
 
 from open_webui.retrieval.loaders.mistral import MistralLoader
 from open_webui.retrieval.loaders.datalab_marker import DatalabMarkerLoader
+from open_webui.retrieval.loaders.datalab_marker_api import DatalabMarkerLoader as DatalabMarkerAPILoader
 
 
 from open_webui.env import SRC_LOG_LEVELS, GLOBAL_LOG_LEVEL
@@ -287,6 +288,49 @@ class Loader:
             loader = DatalabMarkerLoader(
                 file_path=file_path,
                 api_key=self.kwargs.get("DATALAB_MARKER_API_KEY", "dummy"),  
+                langs=self.kwargs.get("DATALAB_MARKER_LANGS"),
+                use_llm=self.kwargs.get("DATALAB_MARKER_USE_LLM", False),
+                skip_cache=self.kwargs.get("DATALAB_MARKER_SKIP_CACHE", False),
+                force_ocr=self.kwargs.get("DATALAB_MARKER_FORCE_OCR", False),
+                paginate=self.kwargs.get("DATALAB_MARKER_PAGINATE", False),
+                strip_existing_ocr=self.kwargs.get(
+                    "DATALAB_MARKER_STRIP_EXISTING_OCR", False
+                ),
+                disable_image_extraction=self.kwargs.get(
+                    "DATALAB_MARKER_DISABLE_IMAGE_EXTRACTION", False
+                ),
+                output_format=self.kwargs.get(
+                    "DATALAB_MARKER_OUTPUT_FORMAT", "markdown"
+                ),
+            )
+        elif (
+            self.engine == "datalab_marker_api"
+            and self.kwargs.get("DATALAB_MARKER_API_KEY")
+            and file_ext
+            in [
+                "pdf",
+                "xls",
+                "xlsx",
+                "ods",
+                "doc",
+                "docx",
+                "odt",
+                "ppt",
+                "pptx",
+                "odp",
+                "html",
+                "epub",
+                "png",
+                "jpeg",
+                "jpg",
+                "webp",
+                "gif",
+                "tiff",
+            ]
+        ):
+            loader = DatalabMarkerAPILoader(
+                file_path=file_path,
+                api_key=self.kwargs.get("DATALAB_MARKER_API_KEY"),
                 langs=self.kwargs.get("DATALAB_MARKER_LANGS"),
                 use_llm=self.kwargs.get("DATALAB_MARKER_USE_LLM", False),
                 skip_cache=self.kwargs.get("DATALAB_MARKER_SKIP_CACHE", False),

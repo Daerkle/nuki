@@ -175,6 +175,14 @@
 		}
 
 		if (
+			RAGConfig.CONTENT_EXTRACTION_ENGINE === 'datalab_marker_api' &&
+			!RAGConfig.DATALAB_MARKER_API_KEY
+		) {
+			toast.error($i18n.t('Datalab Marker API Key is required for Cloud API mode'));
+			return;
+		}
+
+		if (
 			RAGConfig.CONTENT_EXTRACTION_ENGINE === 'document_intelligence' &&
 			(RAGConfig.DOCUMENT_INTELLIGENCE_ENDPOINT === '' ||
 				RAGConfig.DOCUMENT_INTELLIGENCE_KEY === '')
@@ -322,6 +330,7 @@
 									<option value="tika">{$i18n.t('Tika')}</option>
 									<option value="docling">{$i18n.t('Docling')}</option>
 									<option value="datalab_marker">{$i18n.t('Local Marker')}</option>
+									<option value="datalab_marker_api">{$i18n.t('Datalab Marker (Cloud API)')}</option>
 									<option value="document_intelligence">{$i18n.t('Document Intelligence')}</option>
 									<option value="mistral_ocr">{$i18n.t('Mistral OCR')}</option>
 								</select>
@@ -470,6 +479,13 @@
 										<option value="html">{$i18n.t('HTML')}</option>
 									</select>
 								</div>
+							</div>
+						{:else if RAGConfig.CONTENT_EXTRACTION_ENGINE === 'datalab_marker_api'}
+							<div class="my-0.5 flex gap-2 pr-2">
+								<SensitiveInput
+									placeholder={$i18n.t('Enter Datalab Marker API Key')}
+									bind:value={RAGConfig.DATALAB_MARKER_API_KEY}
+								/>
 							</div>
 						{:else if RAGConfig.CONTENT_EXTRACTION_ENGINE === 'external'}
 							<div class="my-0.5 flex gap-2 pr-2">
