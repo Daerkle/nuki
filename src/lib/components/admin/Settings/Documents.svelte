@@ -329,8 +329,8 @@
 									<option value="external">{$i18n.t('External')}</option>
 									<option value="tika">{$i18n.t('Tika')}</option>
 									<option value="docling">{$i18n.t('Docling')}</option>
-									<option value="datalab_marker">{$i18n.t('Local Marker')}</option>
-									<option value="datalab_marker_api">{$i18n.t('Datalab Marker (Cloud API)')}</option>
+									<option value="datalab_marker">Local Marker</option>
+									<option value="datalab_marker_api">Datalab Marker (Cloud API)</option>
 									<option value="document_intelligence">{$i18n.t('Document Intelligence')}</option>
 									<option value="mistral_ocr">{$i18n.t('Mistral OCR')}</option>
 								</select>
