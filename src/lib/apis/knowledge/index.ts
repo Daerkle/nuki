@@ -180,6 +180,15 @@ export const updateKnowledgeById = async (token: string, id: string, form: Knowl
 export const addFileToKnowledgeById = async (token: string, id: string, fileId: string) => {
 	let error = null;
 
+	// Validierung der Parameter
+	if (!token || token === 'undefined' || token === 'null') {
+		throw 'No valid token available';
+	}
+	
+	if (!id || !fileId) {
+		throw 'Knowledge ID and File ID are required';
+	}
+
 	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/${id}/file/add`, {
 		method: 'POST',
 		headers: {
@@ -192,16 +201,34 @@ export const addFileToKnowledgeById = async (token: string, id: string, fileId: 
 		})
 	})
 		.then(async (res) => {
-			if (!res.ok) throw await res.json();
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw errorData;
+			}
 			return res.json();
 		})
 		.then((json) => {
 			return json;
 		})
 		.catch((err) => {
-			error = err.detail;
-
-			console.error(err);
+			console.error('Add file to knowledge error:', err);
+			
+			// Spezifische Fehlerbehandlung
+			if (err.status === 400) {
+				if (err.detail === 'NOT_FOUND') {
+					error = 'Knowledge base or file not found';
+				} else if (err.detail === 'ACCESS_PROHIBITED') {
+					error = 'Access denied to this knowledge base';
+				} else if (err.detail === 'FILE_NOT_PROCESSED') {
+					error = 'File has not been processed yet. Please wait and try again.';
+				} else {
+					error = err.detail || 'Bad request - please check your input';
+				}
+			} else if (err.status === 401) {
+				error = 'Authentication failed. Please log in again.';
+			} else {
+				error = err.detail || err.message || 'Failed to add file to knowledge base';
+			}
 			return null;
 		});
 

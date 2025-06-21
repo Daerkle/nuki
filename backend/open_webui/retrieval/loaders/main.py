@@ -26,7 +26,7 @@ from langchain_core.documents import Document
 from open_webui.retrieval.loaders.external_document import ExternalDocumentLoader
 
 from open_webui.retrieval.loaders.mistral import MistralLoader
-from open_webui.retrieval.loaders.datalab_marker import DatalabMarkerLoader
+from open_webui.retrieval.loaders.datalab_marker import LocalMarkerLoader
 from open_webui.retrieval.loaders.datalab_marker_api import DatalabMarkerLoader as DatalabMarkerAPILoader
 
 
@@ -285,7 +285,7 @@ class Loader:
                 "tiff",
             ]
         ):
-            loader = DatalabMarkerLoader(
+            loader = LocalMarkerLoader(
                 file_path=file_path,
                 api_key=self.kwargs.get("DATALAB_MARKER_API_KEY", "dummy"),
                 langs=self.kwargs.get("DATALAB_MARKER_LANGS"),
@@ -302,8 +302,9 @@ class Loader:
                 output_format=self.kwargs.get(
                     "DATALAB_MARKER_OUTPUT_FORMAT", "markdown"
                 ),
-                # Pass the marker URL from the config (stored in DATALAB_MARKER_API_KEY field)
-                marker_url=self.kwargs.get("DATALAB_MARKER_API_KEY") if self.kwargs.get("DATALAB_MARKER_API_KEY") and self.kwargs.get("DATALAB_MARKER_API_KEY").startswith("http") else None,
+                # Pass the marker URL from the config
+                marker_url=self.kwargs.get("MARKER_SERVER_URL") or os.getenv("MARKER_SERVER_URL"),
+                timeout=self.kwargs.get("MARKER_TIMEOUT") or int(os.getenv("MARKER_TIMEOUT", "300")),
             )
         elif (
             self.engine == "datalab_marker_api"

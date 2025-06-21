@@ -180,10 +180,19 @@ class LocalMarkerLoader:
                     log.error(f"Marker error response: {response.text}")
                     
                 response.raise_for_status()
-                result = response.json()
+                
+                # Try to parse JSON response
+                try:
+                    result = response.json()
+                except json.JSONDecodeError:
+                    # If JSON parsing fails, treat the response as plain text
+                    result = {"content": response.text}
                 
                 log.info(f"Local Marker conversion completed successfully")
-                log.debug(f"Result keys: {list(result.keys())}")
+                log.debug(f"Result type: {type(result)}")
+                if isinstance(result, dict):
+                    log.debug(f"Result keys: {list(result.keys())}")
+                
                 return result
                 
         except FileNotFoundError:
@@ -224,7 +233,8 @@ class LocalMarkerLoader:
         # Convert using local Marker service
         result = self._convert_with_local_marker()
         
-        if not result.get("success"):
+        # Check if the result indicates failure (only if it's a dict with success field)
+        if isinstance(result, dict) and "success" in result and not result.get("success"):
             error_msg = result.get("error", "Unknown conversion error")
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
@@ -234,14 +244,29 @@ class LocalMarkerLoader:
         # Extract content - the local Marker API might return content differently
         content = None
         
+        log.debug(f"Marker response type: {type(result)}")
+        log.debug(f"Marker response: {result}")
+        
         # Try different possible response formats
         if isinstance(result, dict):
             # Check for different possible content keys
-            content = result.get("markdown") or result.get("text") or result.get("content") or result.get("output")
+            content = (
+                result.get("markdown") or
+                result.get("text") or
+                result.get("content") or
+                result.get("output") or
+                result.get("result") or
+                result.get("data")
+            )
             
             # If still no content, check if the result itself is the content
             if not content and len(result) == 1:
                 content = list(result.values())[0]
+                
+            # Sometimes the content is nested in a success response
+            if not content and result.get("success") and "data" in result:
+                content = result["data"]
+                
         elif isinstance(result, str):
             # The result might be the content directly
             content = result
@@ -251,10 +276,12 @@ class LocalMarkerLoader:
             content = str(content)
         
         if not content or not content.strip():
-            log.error(f"No content found in Marker response. Response keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+            log.error(f"No content found in Marker response.")
+            log.error(f"Response keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+            log.error(f"Full response: {result}")
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                detail=f"Local Marker returned empty content. Response structure: {type(result).__name__}"
+                detail=f"Extracted content is not available for this file. Please ensure that the file is processed before proceeding."
             )
 
         # Save output to disk (matching Datalab behavior)
