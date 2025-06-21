@@ -1940,7 +1940,7 @@ DATALAB_MARKER_STRIP_EXISTING_OCR = PersistentConfig(
 DATALAB_MARKER_DISABLE_IMAGE_EXTRACTION = PersistentConfig(
     "DATALAB_MARKER_DISABLE_IMAGE_EXTRACTION",
     "rag.datalab_marker_disable_image_extraction",
-    os.environ.get("DATALAB_MARKER_DISABLE_IMAGE_EXTRACTION", "false").lower()
+    os.environ.get("DATALAB_MARKER_DISABLE_IMAGE_EXTRACTION", "true").lower()
     == "true",
 )
 

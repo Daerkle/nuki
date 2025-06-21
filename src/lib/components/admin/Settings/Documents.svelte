@@ -395,6 +395,78 @@
 									<Switch bind:state={RAGConfig.DATALAB_MARKER_SKIP_CACHE} />
 								</div>
 							</div>
+
+							<div class="flex justify-between w-full mt-2">
+								<div class="self-center text-xs font-medium">
+									<Tooltip
+										content="Force OCR processing even if text is already present."
+										placement="top-start"
+									>
+										Force OCR
+									</Tooltip>
+								</div>
+								<div class="flex items-center">
+									<Switch bind:state={RAGConfig.DATALAB_MARKER_FORCE_OCR} />
+								</div>
+							</div>
+
+							<div class="flex justify-between w-full mt-2">
+								<div class="self-center text-xs font-medium">
+									<Tooltip
+										content="Split the output into pages for better organization."
+										placement="top-start"
+									>
+										Paginate
+									</Tooltip>
+								</div>
+								<div class="flex items-center">
+									<Switch bind:state={RAGConfig.DATALAB_MARKER_PAGINATE} />
+								</div>
+							</div>
+
+							<div class="flex justify-between w-full mt-2">
+								<div class="self-center text-xs font-medium">
+									<Tooltip
+										content="Remove existing OCR text before processing."
+										placement="top-start"
+									>
+										Strip Existing OCR
+									</Tooltip>
+								</div>
+								<div class="flex items-center">
+									<Switch bind:state={RAGConfig.DATALAB_MARKER_STRIP_EXISTING_OCR} />
+								</div>
+							</div>
+
+							<div class="flex justify-between w-full mt-2">
+								<div class="self-center text-xs font-medium">
+									<Tooltip
+										content="Disable image extraction to speed up processing."
+										placement="top-start"
+									>
+										Disable Image Extraction
+									</Tooltip>
+								</div>
+								<div class="flex items-center">
+									<Switch bind:state={RAGConfig.DATALAB_MARKER_DISABLE_IMAGE_EXTRACTION} />
+								</div>
+							</div>
+
+							<div class="flex justify-between w-full mt-2">
+								<div class="self-center text-xs font-medium">
+									Output Format
+								</div>
+								<div class="flex items-center">
+									<select
+										class="text-sm bg-transparent outline-hidden"
+										bind:value={RAGConfig.DATALAB_MARKER_OUTPUT_FORMAT}
+									>
+										<option value="markdown">Markdown</option>
+										<option value="json">JSON</option>
+										<option value="html">HTML</option>
+									</select>
+								</div>
+							</div>
 							<div class="flex justify-between w-full mt-2">
 								<div class="self-center text-xs font-medium">
 									<Tooltip

@@ -144,6 +144,9 @@ class LocalMarkerLoader:
         if self.strip_existing_ocr is not None:
             form_data["strip_existing_ocr"] = str(self.strip_existing_ocr).lower()
             
+        if self.disable_image_extraction is not None:
+            form_data["disable_image_extraction"] = str(self.disable_image_extraction).lower()
+            
         # Add language parameter if specified
         if self.langs:
             form_data["langs"] = self.langs
