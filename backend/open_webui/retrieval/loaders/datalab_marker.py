@@ -121,31 +121,66 @@ class LocalMarkerLoader:
         filename = os.path.basename(self.file_path)
         mime_type = self._get_mime_type(filename)
 
-        # Prepare form data matching the local API
-        form_data = {
-            "output_format": self.output_format,
-            "extract_images": not self.disable_image_extraction,
-            "force_ocr": self.force_ocr,
-            "format_lines": True,  # Always format lines for better quality
-        }
+        # Prepare form data for local Marker API
+        form_data = {}
+        
+        # Add all supported parameters
+        if self.output_format:
+            form_data["output_format"] = self.output_format
+        
+        # Convert boolean values to strings as expected by the API
+        if self.force_ocr is not None:
+            form_data["force_ocr"] = str(self.force_ocr).lower()
+        
+        if self.use_llm is not None:
+            form_data["use_llm"] = str(self.use_llm).lower()
+            
+        if self.skip_cache is not None:
+            form_data["skip_cache"] = str(self.skip_cache).lower()
+            
+        if self.paginate is not None:
+            form_data["paginate"] = str(self.paginate).lower()
+            
+        if self.strip_existing_ocr is not None:
+            form_data["strip_existing_ocr"] = str(self.strip_existing_ocr).lower()
+            
+        # Add language parameter if specified
+        if self.langs:
+            form_data["langs"] = self.langs
 
         log.info(
-            f"Local Marker request parameters: {{'filename': '{filename}', 'mime_type': '{mime_type}', **{form_data}}}"
+            f"Local Marker request - URL: {self.marker_url}/convert, filename: {filename}, mime_type: {mime_type}, form_data: {form_data}"
         )
 
         try:
             with open(self.file_path, "rb") as f:
                 files = {"file": (filename, f, mime_type)}
-                response = requests.post(
-                    f"{self.marker_url}/convert",
-                    data=form_data,
-                    files=files,
-                    timeout=self.timeout
-                )
+                
+                # Try with form_data if we have any, otherwise just send the file
+                if form_data:
+                    response = requests.post(
+                        f"{self.marker_url}/convert",
+                        data=form_data,
+                        files=files,
+                        timeout=self.timeout
+                    )
+                else:
+                    response = requests.post(
+                        f"{self.marker_url}/convert",
+                        files=files,
+                        timeout=self.timeout
+                    )
+                
+                log.info(f"Marker response status: {response.status_code}")
+                
+                if response.status_code != 200:
+                    log.error(f"Marker error response: {response.text}")
+                    
                 response.raise_for_status()
                 result = response.json()
                 
-                log.info(f"Local Marker conversion completed: {result.get('message', 'Success')}")
+                log.info(f"Local Marker conversion completed successfully")
+                log.debug(f"Result keys: {list(result.keys())}")
                 return result
                 
         except FileNotFoundError:
@@ -193,19 +228,30 @@ class LocalMarkerLoader:
                 detail=f"Local Marker conversion failed: {error_msg}"
             )
 
-        # Extract content based on output format
-        if self.output_format.lower() == "markdown":
-            content = result.get("markdown", "")
-        elif self.output_format.lower() == "json":
-            # For JSON output, we'd need to modify the local API to support it
-            content = json.dumps(result, indent=2)
-        else:
-            content = str(result.get("markdown", ""))
-
+        # Extract content - the local Marker API might return content differently
+        content = None
+        
+        # Try different possible response formats
+        if isinstance(result, dict):
+            # Check for different possible content keys
+            content = result.get("markdown") or result.get("text") or result.get("content") or result.get("output")
+            
+            # If still no content, check if the result itself is the content
+            if not content and len(result) == 1:
+                content = list(result.values())[0]
+        elif isinstance(result, str):
+            # The result might be the content directly
+            content = result
+        
+        # Convert to string if needed
+        if content and not isinstance(content, str):
+            content = str(content)
+        
         if not content or not content.strip():
+            log.error(f"No content found in Marker response. Response keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                detail="Local Marker returned empty content"
+                detail=f"Local Marker returned empty content. Response structure: {type(result).__name__}"
             )
 
         # Save output to disk (matching Datalab behavior)

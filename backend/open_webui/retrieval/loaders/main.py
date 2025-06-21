@@ -287,7 +287,7 @@ class Loader:
         ):
             loader = DatalabMarkerLoader(
                 file_path=file_path,
-                api_key=self.kwargs.get("DATALAB_MARKER_API_KEY", "dummy"),  
+                api_key=self.kwargs.get("DATALAB_MARKER_API_KEY", "dummy"),
                 langs=self.kwargs.get("DATALAB_MARKER_LANGS"),
                 use_llm=self.kwargs.get("DATALAB_MARKER_USE_LLM", False),
                 skip_cache=self.kwargs.get("DATALAB_MARKER_SKIP_CACHE", False),
@@ -302,6 +302,8 @@ class Loader:
                 output_format=self.kwargs.get(
                     "DATALAB_MARKER_OUTPUT_FORMAT", "markdown"
                 ),
+                # Pass the marker URL from the config (stored in DATALAB_MARKER_API_KEY field)
+                marker_url=self.kwargs.get("DATALAB_MARKER_API_KEY") if self.kwargs.get("DATALAB_MARKER_API_KEY") and self.kwargs.get("DATALAB_MARKER_API_KEY").startswith("http") else None,
             )
         elif (
             self.engine == "datalab_marker_api"

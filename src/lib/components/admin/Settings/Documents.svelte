@@ -349,49 +349,46 @@
 								</div>
 							</div>
 						{:else if RAGConfig.CONTENT_EXTRACTION_ENGINE === 'datalab_marker'}
+							<!-- Local Marker Settings -->
 							<div class="my-0.5 flex gap-2 pr-2">
 								<input
 									class="flex-1 w-full text-sm bg-transparent outline-hidden"
-									placeholder={$i18n.t('Enter Marker Server URL (e.g., http://marker:8501)')}
+									placeholder="Enter Marker Server URL (e.g., http://marker:8501)"
 									bind:value={RAGConfig.DATALAB_MARKER_API_KEY}
 								/>
 							</div>
 
 							<div class="flex justify-between w-full mt-2">
-								<div class="text-xs font-medium">
-									{$i18n.t('Languages')}
-								</div>
-
+								<div class="text-xs font-medium">Languages</div>
 								<input
 									class="text-sm bg-transparent outline-hidden"
 									type="text"
 									bind:value={RAGConfig.DATALAB_MARKER_LANGS}
-									placeholder={$i18n.t('e.g.) en,fr,de')}
+									placeholder="e.g.) en,fr,de"
 								/>
 							</div>
 
 							<div class="flex justify-between w-full mt-2">
 								<div class="self-center text-xs font-medium">
 									<Tooltip
-										content={$i18n.t(
-											'Significantly improves accuracy by using an LLM to enhance tables, forms, inline math, and layout detection. Will increase latency. Defaults to True.'
-										)}
+										content="Significantly improves accuracy by using an LLM to enhance tables, forms, inline math, and layout detection. Will increase latency."
 										placement="top-start"
 									>
-										{$i18n.t('Use LLM')}
+										Use LLM
 									</Tooltip>
 								</div>
 								<div class="flex items-center">
 									<Switch bind:state={RAGConfig.DATALAB_MARKER_USE_LLM} />
 								</div>
 							</div>
+
 							<div class="flex justify-between w-full mt-2">
 								<div class="self-center text-xs font-medium">
 									<Tooltip
-										content={$i18n.t('Skip the cache and re-run the inference. Defaults to False.')}
+										content="Skip the cache and re-run the inference."
 										placement="top-start"
 									>
-										{$i18n.t('Skip Cache')}
+										Skip Cache
 									</Tooltip>
 								</div>
 								<div class="flex items-center">
