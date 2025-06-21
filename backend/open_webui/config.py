@@ -1950,6 +1950,12 @@ DATALAB_MARKER_OUTPUT_FORMAT = PersistentConfig(
     os.environ.get("DATALAB_MARKER_OUTPUT_FORMAT", "markdown"),
 )
 
+MARKER_SERVER_URL = PersistentConfig(
+    "MARKER_SERVER_URL",
+    "rag.marker_server_url",
+    os.environ.get("MARKER_SERVER_URL", ""),
+)
+
 EXTERNAL_DOCUMENT_LOADER_URL = PersistentConfig(
     "EXTERNAL_DOCUMENT_LOADER_URL",
     "rag.external_document_loader_url",
