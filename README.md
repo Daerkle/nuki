@@ -57,3 +57,4 @@ OAKMIND HIVE V 1.0 ist eine hochmoderne, selbst-hostbare KI-Plattform, die spezi
 | Multi-Model Support | ✅ Unbegrenzt | ❌ Nur OpenAI | ❌ Nur Anthropic |
 | On-Premise | ✅ Standard | ❌ Nicht verfügbar | ❌ Nicht verfügbar |
 | Anpassbarkeit | ✅ Vollständig | ⚠️ Begrenzt | ⚠️ Begrenzt |# hive-dsgvo
+# hive-dsgvo
