@@ -463,17 +463,17 @@
 				<div class="w-10 h-10 flex items-center justify-center">
 					<img
 						src="/static/splash.png"
-						alt="OAKMIND HIVE Logo"
+						alt="NUKI Logo"
 						class="w-full h-full object-contain dark:hidden"
 					/>
 					<img
 						src="/static/splash-dark.png"
-						alt="OAKMIND HIVE Logo"
+						alt="NUKI Logo"
 						class="w-full h-full object-contain hidden dark:block"
 					/>
 				</div>
 				<div class="text-lg font-bold text-gray-900 dark:text-gray-100" style="font-family: 'AquaGrotesque', sans-serif;">
-					HIVE
+					NUKI
 				</div>
 			</div>
 			<button

@@ -20,7 +20,7 @@ from open_webui.env import SRC_LOG_LEVELS
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
-from open_webui.utils.auth import get_admin_user, get_password_hash, get_verified_user
+from open_webui.utils.auth import get_admin_user, get_department_manager_user, get_password_hash, get_verified_user
 from open_webui.utils.access_control import get_permissions, has_permission
 
 
@@ -43,7 +43,7 @@ async def get_users(
     order_by: Optional[str] = None,
     direction: Optional[str] = None,
     page: Optional[int] = 1,
-    user=Depends(get_admin_user),
+    user=Depends(get_department_manager_user),
 ):
     limit = PAGE_ITEM_COUNT
 
@@ -63,7 +63,7 @@ async def get_users(
 
 @router.get("/all", response_model=UserListResponse)
 async def get_all_users(
-    user=Depends(get_admin_user),
+    user=Depends(get_department_manager_user),
 ):
     return Users.get_users()
 
@@ -312,7 +312,7 @@ async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
 async def update_user_by_id(
     user_id: str,
     form_data: UserUpdateForm,
-    session_user=Depends(get_admin_user),
+    session_user=Depends(get_department_manager_user),
 ):
     # Prevent modification of the primary admin user by other admins
     try:

@@ -36,6 +36,10 @@ class User(Base):
     info = Column(JSONField, nullable=True)
 
     oauth_sub = Column(Text, unique=True)
+    
+    # Department Manager Erweiterungen (rückwärtskompatibel)
+    department = Column(String, nullable=True)  # Abteilungs-Name
+    managed_by = Column(String, nullable=True)  # Verwaltet von User-ID
 
 
 class UserSettings(BaseModel):
@@ -60,6 +64,10 @@ class UserModel(BaseModel):
     info: Optional[dict] = None
 
     oauth_sub: Optional[str] = None
+    
+    # Department Manager fields
+    department: Optional[str] = None
+    managed_by: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -39,6 +39,11 @@ class Group(Base):
 
     created_at = Column(BigInteger)
     updated_at = Column(BigInteger)
+    
+    # Department Manager Erweiterungen (rückwärtskompatibel)
+    created_by = Column(Text, nullable=True)  # Wer hat die Gruppe erstellt
+    managed_by = Column(Text, nullable=True)  # Wer verwaltet die Gruppe
+    department = Column(Text, nullable=True)  # Zu welcher Abteilung gehört die Gruppe
 
 
 class GroupModel(BaseModel):
@@ -57,6 +62,11 @@ class GroupModel(BaseModel):
 
     created_at: int  # timestamp in epoch
     updated_at: int  # timestamp in epoch
+    
+    # Department Manager Felder
+    created_by: Optional[str] = None
+    managed_by: Optional[str] = None
+    department: Optional[str] = None
 
 
 ####################
@@ -73,6 +83,11 @@ class GroupResponse(BaseModel):
     data: Optional[dict] = None
     meta: Optional[dict] = None
     user_ids: list[str] = []
+    
+    # Department Manager Felder
+    created_by: Optional[str] = None
+    managed_by: Optional[str] = None
+    department: Optional[str] = None
     created_at: int  # timestamp in epoch
     updated_at: int  # timestamp in epoch
 
@@ -81,6 +96,7 @@ class GroupForm(BaseModel):
     name: str
     description: str
     permissions: Optional[dict] = None
+    user_ids: Optional[list[str]] = []
 
 
 class GroupUpdateForm(GroupForm):
@@ -92,23 +108,21 @@ class GroupTable:
         self, user_id: str, form_data: GroupForm
     ) -> Optional[GroupModel]:
         with get_db() as db:
-            group = GroupModel(
-                **{
-                    **form_data.model_dump(exclude_none=True),
-                    "id": str(uuid.uuid4()),
-                    "user_id": user_id,
-                    "created_at": int(time.time()),
-                    "updated_at": int(time.time()),
-                }
-            )
+            group_data = {
+                **form_data.model_dump(exclude_none=True),
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "created_at": int(time.time()),
+                "updated_at": int(time.time()),
+            }
+            group = Group(**group_data)
 
             try:
-                result = Group(**group.model_dump())
-                db.add(result)
+                db.add(group)
                 db.commit()
-                db.refresh(result)
-                if result:
-                    return GroupModel.model_validate(result)
+                db.refresh(group)
+                if group:
+                    return GroupModel.model_validate(group)
                 else:
                     return None
 
@@ -244,6 +258,74 @@ class GroupTable:
             except Exception as e:
                 log.exception(e)
                 return False
+
+    # Department Manager spezifische Methoden
+    def get_groups_by_department_id(self, department_id: str) -> list[GroupModel]:
+        """Gibt alle Gruppen einer bestimmten Abteilung zurück"""
+        with get_db() as db:
+            groups = db.query(Group).filter_by(department=department_id).all()
+            return [GroupModel.model_validate(group) for group in groups]
+
+    def get_managed_groups_by_user_id(self, user_id: str) -> list[GroupModel]:
+        """Gibt alle Gruppen zurück, die von einem bestimmten Benutzer verwaltet werden"""
+        with get_db() as db:
+            groups = db.query(Group).filter_by(managed_by=user_id).all()
+            return [GroupModel.model_validate(group) for group in groups]
+
+    def create_group_by_department_manager(
+        self, user_id: str, department_id: str, form_data: GroupForm
+    ) -> Optional[GroupModel]:
+        """Erstellt eine neue Gruppe durch einen Department Manager"""
+        with get_db() as db:
+            group_id = str(uuid.uuid4())
+            try:
+                group = Group(
+                    id=group_id,
+                    user_id=user_id,
+                    name=form_data.name,
+                    description=form_data.description,
+                    permissions=form_data.permissions,
+                    user_ids=form_data.user_ids,
+                    created_by=user_id,  # Department Manager als Ersteller
+                    managed_by=user_id,  # Department Manager als Verwalter
+                    department=department_id,  # Abteilungs-ID setzen
+                    created_at=int(time.time()),
+                    updated_at=int(time.time()),
+                )
+                db.add(group)
+                db.commit()
+                db.refresh(group)
+                
+                if group:
+                    return GroupModel.model_validate(group)
+                else:
+                    return None
+            except Exception as e:
+                log.exception(e)
+                return None
+
+    def update_group_by_department_manager(
+        self, id: str, user_id: str, form_data: GroupForm
+    ) -> Optional[GroupModel]:
+        """Aktualisiert eine Gruppe durch einen Department Manager"""
+        with get_db() as db:
+            try:
+                db.query(Group).filter_by(id=id).update(
+                    {
+                        "name": form_data.name,
+                        "description": form_data.description,
+                        "permissions": form_data.permissions,
+                        "user_ids": form_data.user_ids,
+                        "updated_at": int(time.time()),
+                    }
+                )
+                db.commit()
+                
+                group = db.query(Group).filter_by(id=id).first()
+                return GroupModel.model_validate(group) if group else None
+            except Exception as e:
+                log.exception(e)
+                return None
 
 
 Groups = GroupTable()

@@ -39,6 +39,7 @@
 
 	let richTextInput = true;
 	let promptAutocomplete = false;
+	let claudeStyleInput = false;
 
 	let largeTextAsFile = false;
 
@@ -218,6 +219,11 @@
 		saveSettings({ richTextInput });
 	};
 
+	const toggleClaudeStyleInput = async () => {
+		claudeStyleInput = !claudeStyleInput;
+		saveSettings({ claudeStyleInput });
+	};
+
 	const toggleLargeTextAsFile = async () => {
 		largeTextAsFile = !largeTextAsFile;
 		saveSettings({ largeTextAsFile });
@@ -309,6 +315,7 @@
 
 		richTextInput = $settings?.richTextInput ?? true;
 		promptAutocomplete = $settings?.promptAutocomplete ?? false;
+		claudeStyleInput = $settings?.claudeStyleInput ?? false;
 		largeTextAsFile = $settings?.largeTextAsFile ?? false;
 		copyFormatted = $settings?.copyFormatted ?? false;
 
@@ -686,6 +693,25 @@
 						type="button"
 					>
 						<span class="font-medium">{richTextInput ? $i18n.t('On') : $i18n.t('Off')}</span>
+					</button>
+				</div>
+
+				<div class="flex w-full justify-between items-center">
+					<div class="self-center text-xs text-gray-600 dark:text-gray-300">
+						Claude-Style Chat Interface
+					</div>
+
+					<button
+						class="px-4 py-1.5 text-xs rounded-lg transition-all duration-200
+						{claudeStyleInput
+							? 'bg-gray-700 dark:bg-gray-600 text-white border border-gray-600 dark:border-gray-500'
+							: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'}"
+						on:click={() => {
+							toggleClaudeStyleInput();
+						}}
+						type="button"
+					>
+						<span class="font-medium">{claudeStyleInput ? $i18n.t('Ein') : $i18n.t('Aus')}</span>
 					</button>
 				</div>
 			</div>

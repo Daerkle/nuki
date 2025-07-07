@@ -1,0 +1,142 @@
+"""Peewee migrations -- 019_add_department_manager.py.
+
+Adds Department Manager role functionality:
+- Extends User model with department_id, managed_groups, permissions
+- Extends Group model with created_by, managed_by, department_id  
+- Creates audit log table for GDPR compliance
+- Backward compatible - all new fields are nullable
+
+Some examples (model - class or model name)::
+
+    > Model = migrator.orm['table_name']            # Return model in current state by name
+    > Model = migrator.ModelClass                   # Return model in current state by name
+
+    > migrator.sql(sql)                             # Run custom SQL
+    > migrator.run(func, *args, **kwargs)           # Run python function with the given args
+    > migrator.create_model(Model)                  # Create a model (could be used as decorator)
+    > migrator.remove_model(model, cascade=True)    # Remove a model
+    > migrator.add_fields(model, **fields)          # Add fields to a model
+    > migrator.change_fields(model, **fields)       # Change fields
+    > migrator.remove_fields(model, *field_names, cascade=True)
+    > migrator.rename_field(model, old_field_name, new_field_name)
+    > migrator.rename_table(model, new_table_name)
+    > migrator.add_index(model, *col_names, unique=False)
+    > migrator.add_not_null(model, *field_names)
+    > migrator.add_default(model, field_name, default)
+    > migrator.add_constraint(model, name, sql)
+    > migrator.drop_index(model, *col_names)
+    > migrator.drop_not_null(model, *field_names)
+    > migrator.drop_constraints(model, *constraints)
+
+"""
+
+from contextlib import suppress
+
+import peewee as pw
+from peewee_migrate import Migrator
+
+
+with suppress(ImportError):
+    import playhouse.postgres_ext as pw_pext
+
+
+def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
+    """Write your migrations here."""
+
+    # Extend User model with Department Manager fields
+    migrator.add_fields(
+        "user",
+        department_id=pw.TextField(null=True),
+        managed_groups=pw.TextField(default="[]", null=True),
+        permissions=pw.TextField(default="{}", null=True),
+    )
+
+    # Check if group table exists and extend it with Department Manager fields
+    try:
+        # Try to add fields to group table
+        migrator.add_fields(
+            "group",
+            created_by=pw.TextField(null=True),
+            managed_by=pw.TextField(null=True),
+            department_id=pw.TextField(null=True),
+        )
+    except Exception as e:
+        print(f"⚠️  Warning: Could not extend group table: {e}")
+        print("ℹ️  Group table might not exist yet or fields already exist")
+
+    # Create audit log table for GDPR compliance
+    @migrator.create_model
+    class GroupAuditLog(pw.Model):
+        id = pw.TextField(primary_key=True)
+        group_id = pw.TextField()
+        user_id = pw.TextField()
+        action = pw.TextField()  # 'created', 'updated', 'deleted', 'member_added', 'member_removed'
+        details = pw.TextField(null=True)  # JSON with additional information
+        created_at = pw.BigIntegerField()
+
+        class Meta:
+            table_name = "group_audit_log"
+
+    # Add indexes for better performance
+    try:
+        migrator.add_index("user", "department_id")
+        migrator.add_index("user", "role")
+        migrator.add_index("group", "department_id")
+        migrator.add_index("group", "managed_by")
+        migrator.add_index("group", "created_by")
+        migrator.add_index("group_audit_log", "group_id")
+        migrator.add_index("group_audit_log", "user_id")
+        migrator.add_index("group_audit_log", "created_at")
+    except Exception as e:
+        print(f"⚠️  Warning: Could not add some indexes: {e}")
+
+    # Set created_by for existing groups to first admin user
+    def assign_existing_groups_to_admin():
+        """Assigns existing groups to the first admin user"""
+        try:
+            # Get first admin user
+            admin_result = database.execute_sql(
+                "SELECT id FROM \"user\" WHERE role = 'admin' LIMIT 1"
+            ).fetchone()
+            
+            if admin_result:
+                admin_id = admin_result[0]
+                # Update existing groups
+                database.execute_sql(
+                    "UPDATE \"group\" SET created_by = ? WHERE created_by IS NULL",
+                    (admin_id,)
+                )
+                print(f"✅ Assigned existing groups to admin user: {admin_id}")
+            else:
+                print("ℹ️  No admin user found, skipping group assignment")
+        except Exception as e:
+            print(f"⚠️  Warning: Could not assign existing groups to admin: {e}")
+
+    # Run the assignment function
+    try:
+        migrator.run(assign_existing_groups_to_admin)
+    except Exception as e:
+        print(f"⚠️  Warning: Could not run group assignment: {e}")
+
+
+def rollback(migrator: Migrator, database: pw.Database, *, fake=False):
+    """Write your rollback migrations here."""
+
+    # Remove indexes
+    migrator.drop_index("user", "department_id")
+    migrator.drop_index("user", "role")
+    migrator.drop_index("group", "department_id")
+    migrator.drop_index("group", "managed_by")
+    migrator.drop_index("group", "created_by")
+    migrator.drop_index("group_audit_log", "group_id")
+    migrator.drop_index("group_audit_log", "user_id")
+    migrator.drop_index("group_audit_log", "created_at")
+
+    # Remove audit log table
+    migrator.remove_model("group_audit_log")
+
+    # Remove fields from Group model
+    migrator.remove_fields("group", "created_by", "managed_by", "department_id")
+
+    # Remove fields from User model
+    migrator.remove_fields("user", "department_id", "managed_groups", "permissions")

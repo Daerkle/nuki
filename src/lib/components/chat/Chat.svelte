@@ -89,6 +89,7 @@
 	import Placeholder from './Placeholder.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 	import Spinner from '../common/Spinner.svelte';
+	import { ClaudeStyleInput, type ModelOption } from '$lib/components/chat/ClaudeStyleInput';
 	import { fade } from 'svelte/transition';
 
 	export let chatIdProp = '';
@@ -1986,8 +1987,8 @@
 <svelte:head>
 	<title>
 		{$chatTitle
-			? `${$chatTitle.length > 30 ? `${$chatTitle.slice(0, 30)}...` : $chatTitle} • OAKMIND HIVE`
-			: `OAKMIND HIVE`}
+			? `${$chatTitle.length > 30 ? `${$chatTitle.slice(0, 30)}...` : $chatTitle} • NUKI`
+			: `NUKI`}
 	</title>
 </svelte:head>
 
@@ -2089,55 +2090,147 @@
 							</div>
 
 							<div class=" pb-2">
-								<MessageInput
-									{history}
-									{taskIds}
-									{selectedModels}
-									bind:files
-									bind:prompt
-									bind:autoScroll
-									bind:selectedToolIds
-									bind:selectedFilterIds
-									bind:imageGenerationEnabled
-									bind:codeInterpreterEnabled
-									bind:webSearchEnabled
-									bind:atSelectedModel
-									toolServers={$toolServers}
-									transparentBackground={$settings?.backgroundImageUrl ?? false}
-									{stopResponse}
-									{createMessagePair}
-									onChange={(input) => {
-										if (input.prompt !== null) {
-											localStorage.setItem(
-												`chat-input${$chatId ? `-${$chatId}` : ''}`,
-												JSON.stringify(input)
-											);
-										} else {
-											localStorage.removeItem(`chat-input${$chatId ? `-${$chatId}` : ''}`);
+								{#if $settings?.claudeStyleInput ?? false}
+									<!-- Claude-Style Input -->
+									<ClaudeStyleInput
+										models={$models && $models.length > 0 
+											? $models.map((model) => ({
+												id: model.id,
+												name: model.name || model.id,
+												description: model.info?.meta?.description || 'AI Model',
+												badge: model.info?.meta?.capabilities?.vision ? 'Vision' : undefined,
+												info: model.info
+											}))
+											: [
+												{
+													id: 'no-model',
+													name: 'Kein Model verfügbar',
+													description: 'Bitte konfigurieren Sie ein Model in den Einstellungen',
+													badge: undefined,
+													info: {}
+												}
+											]
 										}
-									}}
-									on:upload={async (e) => {
-										const { type, data } = e.detail;
+										selectedModel={selectedModels[0] || ''}
+										bind:message={prompt}
+										{webSearchEnabled}
+										{imageGenerationEnabled}
+										{codeInterpreterEnabled}
+										placeholder="Wie kann ich Ihnen heute helfen?"
+										maxFiles={10}
+										maxFileSize={50 * 1024 * 1024}
+										disabled={processing !== '' || !$models || $models.length === 0}
+										on:submit={async (e) => {
+											if ((e.detail || files.length > 0) && $models && $models.length > 0) {
+												await tick();
+												submitPrompt(
+													($settings?.richTextInput ?? true)
+														? e.detail.replaceAll('\n\n', '\n')
+														: e.detail
+												);
+											}
+										}}
+										on:modelChange={(e) => {
+											if ($models && $models.find(m => m.id === e.detail)) {
+												selectedModels = [e.detail];
+											}
+										}}
+										on:fileSelect={async (e) => {
+											const fileList = e.detail;
+											for (const file of Array.from(fileList)) {
+												// Handle file upload similar to existing logic
+												const fileItem = {
+													type: file.type.startsWith('image/') ? 'image' : 'file',
+													file: '',
+													id: null,
+													url: '',
+													name: file.name,
+													collection_name: '',
+													status: 'uploading',
+													error: '',
+													size: file.size
+												};
+												
+												files = [...files, fileItem];
+												
+												try {
+													// Upload file logic would go here
+													// For now, just mark as uploaded
+													fileItem.status = 'uploaded';
+													files = files;
+												} catch (e) {
+													fileItem.status = 'error';
+													fileItem.error = e.message;
+													files = files;
+												}
+											}
+										}}
+										on:webSearchToggle={(e) => {
+											webSearchEnabled = e.detail;
+										}}
+										on:imageGenerationToggle={(e) => {
+											imageGenerationEnabled = e.detail;
+										}}
+										on:codeInterpreterToggle={(e) => {
+											codeInterpreterEnabled = e.detail;
+										}}
+										on:voiceRecord={() => {
+											// Voice recording logic would go here
+											console.log('Voice recording requested');
+										}}
+									/>
+								{:else}
+									<!-- Classic MessageInput -->
+									<MessageInput
+										{history}
+										{taskIds}
+										{selectedModels}
+										bind:files
+										bind:prompt
+										bind:autoScroll
+										bind:selectedToolIds
+										bind:selectedFilterIds
+										bind:imageGenerationEnabled
+										bind:codeInterpreterEnabled
+										bind:webSearchEnabled
+										bind:atSelectedModel
+										toolServers={$toolServers}
+										transparentBackground={$settings?.backgroundImageUrl ?? false}
+										{stopResponse}
+										{createMessagePair}
+										onChange={(input) => {
+											if (input.prompt !== null) {
+												localStorage.setItem(
+													`chat-input${$chatId ? `-${$chatId}` : ''}`,
+													JSON.stringify(input)
+												);
+											} else {
+												localStorage.removeItem(`chat-input${$chatId ? `-${$chatId}` : ''}`);
+											}
+										}}
+										on:upload={async (e) => {
+											const { type, data } = e.detail;
 
-										if (type === 'web') {
-											await uploadWeb(data);
-										} else if (type === 'youtube') {
-											await uploadYoutubeTranscription(data);
-										} else if (type === 'google-drive') {
-											await uploadGoogleDriveFile(data);
-										}
-									}}
-									on:submit={async (e) => {
-										if (e.detail || files.length > 0) {
-											await tick();
-											submitPrompt(
-												($settings?.richTextInput ?? true)
-													? e.detail.replaceAll('\n\n', '\n')
-													: e.detail
-											);
-										}
-									}}
-								/>
+											if (type === 'web') {
+												await uploadWeb(data);
+											} else if (type === 'youtube') {
+												await uploadYoutubeTranscription(data);
+											} else if (type === 'google-drive') {
+												await uploadGoogleDriveFile(data);
+											}
+										}}
+										on:submit={async (e) => {
+											if (e.detail || files.length > 0) {
+												await tick();
+												submitPrompt(
+													($settings?.richTextInput ?? true)
+														? e.detail.replaceAll('\n\n', '\n')
+														: e.detail
+												);
+											}
+										}}
+									/>
+								{/if}
 
 								<div
 									class="absolute bottom-1 text-xs text-gray-500 text-center line-clamp-1 right-0 left-0"

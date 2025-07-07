@@ -145,8 +145,8 @@
 <svelte:head>
 	<title>
 		{title
-			? `${title.length > 30 ? `${title.slice(0, 30)}...` : title} • OAKMIND HIVE`
-			: `OAKMIND HIVE`}
+			? `${title.length > 30 ? `${title.slice(0, 30)}...` : title} • NUKI`
+			: `NUKI`}
 	</title>
 </svelte:head>
 

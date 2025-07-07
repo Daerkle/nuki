@@ -330,6 +330,27 @@ input[type='number'] {
 	outline: none;
 }
 
+
+
+/* Alle Textarea Focus-Styles entfernen */
+textarea:focus,
+textarea:focus-visible {
+	outline: none !important;
+	border: none !important;
+	box-shadow: none !important;
+	-webkit-appearance: none !important;
+	-moz-appearance: none !important;
+	appearance: none !important;
+}
+
+/* Spezifisch für Chat-Container */
+.chat-input-container textarea:focus,
+.chat-input-container textarea:focus-visible {
+	outline: none !important;
+	border: none !important;
+	box-shadow: none !important;
+}
+
 .ProseMirror p.is-editor-empty:first-child::before {
 	content: attr(data-placeholder);
 	float: left;

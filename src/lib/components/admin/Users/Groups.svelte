@@ -39,11 +39,11 @@
 	let groups = [];
 	let filteredGroups;
 
-	$: filteredGroups = groups.filter((user) => {
+	$: filteredGroups = groups.filter((group) => {
 		if (search === '') {
 			return true;
 		} else {
-			let name = user.name.toLowerCase();
+			let name = group.name.toLowerCase();
 			const query = search.toLowerCase();
 			return name.includes(query);
 		}
@@ -122,7 +122,7 @@
 	};
 
 	onMount(async () => {
-		if ($user?.role !== 'admin') {
+		if (!['admin', 'department_manager'].includes($user?.role)) {
 			await goto('/');
 			return;
 		}
@@ -138,7 +138,11 @@
 		}
 
 		await setGroups();
-		defaultPermissions = await getUserDefaultPermissions(localStorage.token);
+		
+		// Nur Admins können Default Permissions laden
+		if ($user?.role === 'admin') {
+			defaultPermissions = await getUserDefaultPermissions(localStorage.token);
+		}
 
 		loaded = true;
 	});
@@ -237,39 +241,41 @@
 			</div>
 		{/if}
 
-		<hr class="mb-2 border-gray-100 dark:border-gray-850" />
+		{#if $user?.role === 'admin'}
+			<hr class="mb-2 border-gray-100 dark:border-gray-850" />
 
-		<GroupModal
-			bind:show={showDefaultPermissionsModal}
-			tabs={['permissions']}
-			bind:permissions={defaultPermissions}
-			custom={false}
-			onSubmit={updateDefaultPermissionsHandler}
-		/>
+			<GroupModal
+				bind:show={showDefaultPermissionsModal}
+				tabs={['permissions']}
+				bind:permissions={defaultPermissions}
+				custom={false}
+				onSubmit={updateDefaultPermissionsHandler}
+			/>
 
-		<button
-			class="flex items-center justify-between rounded-lg w-full transition pt-1"
-			on:click={() => {
-				showDefaultPermissionsModal = true;
-			}}
-		>
-			<div class="flex items-center gap-2.5">
-				<div class="p-1.5 bg-black/5 dark:bg-white/10 rounded-full">
-					<UsersSolid className="size-4" />
-				</div>
+			<button
+				class="flex items-center justify-between rounded-lg w-full transition pt-1"
+				on:click={() => {
+					showDefaultPermissionsModal = true;
+				}}
+			>
+				<div class="flex items-center gap-2.5">
+					<div class="p-1.5 bg-black/5 dark:bg-white/10 rounded-full">
+						<UsersSolid className="size-4" />
+					</div>
 
-				<div class="text-left">
-					<div class=" text-sm font-medium">{$i18n.t('Default permissions')}</div>
+					<div class="text-left">
+						<div class=" text-sm font-medium">{$i18n.t('Default permissions')}</div>
 
-					<div class="flex text-xs mt-0.5">
-						{$i18n.t('applies to all users with the "user" role')}
+						<div class="flex text-xs mt-0.5">
+							{$i18n.t('applies to all users with the "user" role')}
+						</div>
 					</div>
 				</div>
-			</div>
 
-			<div>
-				<ChevronRight strokeWidth="2.5" />
-			</div>
-		</button>
+				<div>
+					<ChevronRight strokeWidth="2.5" />
+				</div>
+			</button>
+		{/if}
 	</div>
 {/if}

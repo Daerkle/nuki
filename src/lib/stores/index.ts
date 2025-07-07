@@ -147,6 +147,7 @@ type Settings = {
 	splitLargeDeltas?: boolean;
 	chatDirection: 'LTR' | 'RTL' | 'auto';
 	ctrlEnterToSend?: boolean;
+	claudeStyleInput?: boolean;
 
 	system?: string;
 	seed?: number;

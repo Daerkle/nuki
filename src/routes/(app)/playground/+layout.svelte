@@ -11,7 +11,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Playground')} • OAKMIND HIVE
+		{$i18n.t('Playground')} • NUKI
 	</title>
 </svelte:head>
 

@@ -27,7 +27,7 @@ class LocalMarkerLoader:
         force_ocr: bool = False,
         paginate: bool = False,
         strip_existing_ocr: bool = False,
-        disable_image_extraction: bool = False,
+        disable_image_extraction: bool = True,  # Default True for Qdrant compatibility
         output_format: str = "markdown",
         # Local Marker specific parameters
         marker_url: str = None,
@@ -56,7 +56,8 @@ class LocalMarkerLoader:
         self.force_ocr = force_ocr
         self.paginate = paginate
         self.strip_existing_ocr = strip_existing_ocr
-        self.disable_image_extraction = disable_image_extraction
+        # Force disable image extraction for local Marker as Qdrant cannot process images
+        self.disable_image_extraction = True  # Always True for local implementation
         self.output_format = output_format or "markdown"
         
         # api_key is ignored for local implementation but kept for compatibility
@@ -143,9 +144,6 @@ class LocalMarkerLoader:
             
         if self.strip_existing_ocr is not None:
             form_data["strip_existing_ocr"] = str(self.strip_existing_ocr).lower()
-            
-        if self.disable_image_extraction is not None:
-            form_data["disable_image_extraction"] = str(self.disable_image_extraction).lower()
             
         # Add language parameter if specified
         if self.langs:

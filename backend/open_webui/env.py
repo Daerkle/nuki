@@ -106,8 +106,8 @@ for source in log_sources:
 
 log.setLevel(SRC_LOG_LEVELS["CONFIG"])
 
-# Hardcoded to OAKMIND HIVE for complete branding
-WEBUI_NAME = "OAKMIND HIVE"
+# Hardcoded to NUKI for complete branding
+WEBUI_NAME = "NUKI"
 
 WEBUI_FAVICON_URL = "https://openwebui.com/favicon.png"
 

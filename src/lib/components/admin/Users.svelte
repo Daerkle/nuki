@@ -33,7 +33,7 @@
 	let loaded = false;
 
 	onMount(async () => {
-		if ($user?.role !== 'admin') {
+		if (!['admin', 'department_manager'].includes($user?.role)) {
 			await goto('/');
 		}
 
@@ -60,30 +60,32 @@
 		id="users-tabs-container"
 		class="flex flex-row overflow-x-auto gap-2.5 max-w-full lg:gap-1 lg:flex-col lg:flex-none lg:w-40 text-gray-700 dark:text-gray-200 text-sm font-medium text-left scrollbar-none bg-gray-50 dark:bg-gray-800/50 rounded-xl p-2"
 	>
-		<button
-			id="overview"
-			class="px-4 py-2.5 min-w-fit rounded-lg lg:flex-none flex text-left transition-all duration-200 {selectedTab ===
-			'overview'
-				? 'bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-750 text-gray-800 dark:text-gray-100 shadow-md'
-				: 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'}"
-			on:click={() => {
-				goto('/admin/users/overview');
-			}}
-		>
-			<div class=" self-center mr-2">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 16 16"
-					fill="currentColor"
-					class="size-4"
-				>
-					<path
-						d="M8.5 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10.9 12.006c.11.542-.348.994-.9.994H2c-.553 0-1.01-.452-.902-.994a5.002 5.002 0 0 1 9.803 0ZM14.002 12h-1.59a2.556 2.556 0 0 0-.04-.29 6.476 6.476 0 0 0-1.167-2.603 3.002 3.002 0 0 1 3.633 1.911c.18.522-.283.982-.836.982ZM12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"
-					/>
-				</svg>
-			</div>
-			<div class=" self-center">{$i18n.t('Overview')}</div>
-		</button>
+		{#if $user?.role === 'admin'}
+			<button
+				id="overview"
+				class="px-4 py-2.5 min-w-fit rounded-lg lg:flex-none flex text-left transition-all duration-200 {selectedTab ===
+				'overview'
+					? 'bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-750 text-gray-800 dark:text-gray-100 shadow-md'
+					: 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'}"
+				on:click={() => {
+					goto('/admin/users/overview');
+				}}
+			>
+				<div class=" self-center mr-2">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 16 16"
+						fill="currentColor"
+						class="size-4"
+					>
+						<path
+							d="M8.5 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10.9 12.006c.11.542-.348.994-.9.994H2c-.553 0-1.01-.452-.902-.994a5.002 5.002 0 0 1 9.803 0ZM14.002 12h-1.59a2.556 2.556 0 0 0-.04-.29 6.476 6.476 0 0 0-1.167-2.603 3.002 3.002 0 0 1 3.633 1.911c.18.522-.283.982-.836.982ZM12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"
+						/>
+					</svg>
+				</div>
+				<div class=" self-center">{$i18n.t('Overview')}</div>
+			</button>
+		{/if}
 
 		<button
 			id="groups"

@@ -45,7 +45,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Workspace')} • OAKMIND HIVE
+		{$i18n.t('Workspace')} • NUKI
 	</title>
 </svelte:head>
 

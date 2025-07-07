@@ -1,0 +1,1 @@
+npx shadcn@latest add "https://21st.dev/r/suraj-xd/claude-style-ai-input"

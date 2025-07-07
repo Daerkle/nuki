@@ -154,6 +154,7 @@ def save_config(config):
 
 T = TypeVar("T")
 
+
 ENABLE_PERSISTENT_CONFIG = (
     os.environ.get("ENABLE_PERSISTENT_CONFIG", "True").lower() == "true"
 )
@@ -504,7 +505,7 @@ OAUTH_ALLOWED_ROLES = PersistentConfig(
     "oauth.allowed_roles",
     [
         role.strip()
-        for role in os.environ.get("OAUTH_ALLOWED_ROLES", "user,admin").split(",")
+        for role in os.environ.get("OAUTH_ALLOWED_ROLES", "user,admin,department_manager").split(",")
     ],
 )
 
@@ -726,7 +727,7 @@ if CUSTOM_NAME:
 LICENSE_KEY = os.environ.get("LICENSE_KEY", "")
 
 ####################################
-# STORAGE PROVIDER
+# STORAGE_PROVIDER
 ####################################
 
 STORAGE_PROVIDER = os.environ.get("STORAGE_PROVIDER", "local")  # defaults to local, s3
@@ -1001,8 +1002,8 @@ MODEL_ORDER_LIST = PersistentConfig(
 
 DEFAULT_USER_ROLE = PersistentConfig(
     "DEFAULT_USER_ROLE",
-    "ui.default_user_role",
-    os.getenv("DEFAULT_USER_ROLE", "pending"),
+    "roles.default_user_role",
+    os.getenv("DEFAULT_USER_ROLE", "user"),
 )
 
 PENDING_USER_OVERLAY_TITLE = PersistentConfig(
@@ -3075,4 +3076,23 @@ LDAP_VALIDATE_CERT = PersistentConfig(
 
 LDAP_CIPHERS = PersistentConfig(
     "LDAP_CIPHERS", "ldap.server.ciphers", os.environ.get("LDAP_CIPHERS", "ALL")
+)
+
+ENABLE_ADMIN_KNOWLEDGE_ACCESS_OVERRIDE = PersistentConfig(
+    "ENABLE_ADMIN_KNOWLEDGE_ACCESS_OVERRIDE",
+    "knowledge.enable_admin_access_override",
+    os.environ.get("ENABLE_ADMIN_KNOWLEDGE_ACCESS_OVERRIDE", "false").lower() == "false",
+)
+
+# Department Manager Konfiguration
+ENABLE_DEPARTMENT_MANAGER_ROLE = PersistentConfig(
+    "ENABLE_DEPARTMENT_MANAGER_ROLE",
+    "roles.enable_department_manager",
+    os.environ.get("ENABLE_DEPARTMENT_MANAGER_ROLE", "false").lower() == "true",
+)
+
+ENABLE_GROUP_AUDIT_LOG = PersistentConfig(
+    "ENABLE_GROUP_AUDIT_LOG",
+    "groups.enable_audit_log",
+    os.environ.get("ENABLE_GROUP_AUDIT_LOG", "false").lower() == "true",
 )

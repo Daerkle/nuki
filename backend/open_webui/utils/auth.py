@@ -283,7 +283,7 @@ def get_current_user_by_api_key(api_key: str):
 
 
 def get_verified_user(user=Depends(get_current_user)):
-    if user.role not in {"user", "admin"}:
+    if user.role not in {"user", "admin", "department_manager"}:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
@@ -298,3 +298,88 @@ def get_admin_user(user=Depends(get_current_user)):
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
     return user
+
+
+# Department Manager Berechtigungsfunktionen
+def get_department_manager_user(user=Depends(get_current_user)):
+    """Überprüft ob der Benutzer ein Department Manager ist"""
+    if user.role not in ["admin", "department_manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+        )
+    return user
+
+
+def has_department_access(user, target_department_id: str) -> bool:
+    """Prüft ob ein Benutzer Zugriff auf eine bestimmte Abteilung hat"""
+    # Admins haben immer Zugriff (falls nicht durch DSGVO eingeschränkt)
+    if user.role == "admin":
+        return True
+    
+    # Department Manager haben nur Zugriff auf ihre eigene Abteilung
+    if user.role == "department_manager":
+        return user.department_id == target_department_id
+    
+    # Normale Benutzer haben nur Zugriff auf ihre eigene Abteilung
+    return user.department_id == target_department_id
+
+
+def can_manage_group(user, group) -> bool:
+    """Prüft ob ein Benutzer eine Gruppe verwalten darf"""
+    # Admins können alle Gruppen verwalten
+    if user.role == "admin":
+        return True
+    
+    # Department Manager können nur Gruppen ihrer Abteilung verwalten
+    if user.role == "department_manager":
+        # Gruppe gehört zur gleichen Abteilung
+        if group.department_id and group.department_id == user.department_id:
+            return True
+        # Gruppe ist explizit dem Department Manager zugewiesen
+        if group.managed_by == user.id:
+            return True
+        # Gruppe wurde vom Department Manager erstellt
+        if group.created_by == user.id:
+            return True
+    
+    # Gruppenbesitzer können ihre eigenen Gruppen verwalten
+    if group.user_id == user.id:
+        return True
+    
+    return False
+
+
+def can_add_user_to_group(manager_user, target_user, group) -> bool:
+    """Prüft ob ein Department Manager einen Benutzer zu einer Gruppe hinzufügen darf"""
+    # Erst prüfen ob der Manager die Gruppe verwalten darf
+    if not can_manage_group(manager_user, group):
+        return False
+    
+    # Department Manager können nur Benutzer ihrer eigenen Abteilung hinzufügen
+    if manager_user.role == "department_manager":
+        return target_user.department_id == manager_user.department_id
+    
+    # Admins können alle Benutzer hinzufügen
+    if manager_user.role == "admin":
+        return True
+    
+    return False
+
+
+def get_accessible_groups_for_user(user):
+    """Gibt die für einen Benutzer zugänglichen Gruppen zurück"""
+    from open_webui.models.groups import Groups
+    
+    if user.role == "admin":
+        # Admins sehen alle Gruppen (außer bei DSGVO-Einschränkung)
+        return Groups.get_groups()
+    
+    elif user.role == "department_manager":
+        # Department Manager sehen nur Gruppen ihrer Abteilung
+        department = getattr(user, 'department', None)
+        return Groups.get_groups_by_department_id(department) if department else []
+    
+    else:
+        # Normale Benutzer sehen nur ihre eigenen Gruppen
+        return Groups.get_groups_by_user_id(user.id)

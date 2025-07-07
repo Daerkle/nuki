@@ -1,12 +1,17 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { user } from '$lib/stores';
 
-	import Users from '$lib/components/admin/Users.svelte';
-
-	onMount(() => {
-		goto('/admin/users/overview');
+	onMount(async () => {
+		if ($user?.role === 'admin') {
+			await goto('/admin/users/overview');
+		} else if ($user?.role === 'department_manager') {
+			await goto('/admin/users/groups');
+		} else {
+			await goto('/');
+		}
 	});
 </script>
 
-<Users />
+<!-- This page redirects to the appropriate users section based on user role -->

@@ -61,6 +61,12 @@ Wenn Sie Fehler wie "500 Internal Server Error" erhalten:
 2. Testen Sie die URL direkt: `curl http://marker:8501/health`
 3. Schauen Sie in die Logs: `docker logs marker`
 
+### Bildextraktion Fehler
+**WICHTIGER HINWEIS:** Die lokale Marker-Implementierung deaktiviert automatisch die Bildextraktion, da Qdrant keine Bilder verarbeiten kann. Dies ist normal und kein Fehler.
+- Die Bildextraktion ist für lokale Marker standardmäßig auf `True` (deaktiviert) gesetzt
+- Bilder aus PDFs werden ignoriert, nur der Text wird extrahiert
+- Dies verhindert Fehler beim Verarbeiten von PDFs mit Bildern
+
 ### Cloud API Fehler
 1. Überprüfen Sie Ihren API-Schlüssel
 2. Stellen Sie sicher, dass Sie "Datalab Marker Cloud API" ausgewählt haben
